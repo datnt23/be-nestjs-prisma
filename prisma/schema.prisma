@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement()) @db.Integer
+  email       String    @unique @db.VarChar(255)
+  password    String    @db.VarChar(255)
+  roles       String[]  @default([]) @db.VarChar(255)
+  firstName   String    @db.VarChar(255)
+  lastName    String    @db.VarChar(255)
+  fullName    String    @db.VarChar(255)
+  displayName String    @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @db.Timestamp()
+  updatedAt   DateTime  @updatedAt @db.Timestamp()
+  deletedAt   DateTime?
+}
+
+// Viet Nam Zone Database
+model AdministrativeRegion {
+  id         Int     @id @default(autoincrement()) @db.Integer
+  name       String  @db.VarChar(255)
+  nameEn     String  @db.VarChar(255)
+  codeName   String? @db.VarChar(255)
+  codeNameEn String? @db.VarChar(255)
+
+  provinces Province[]
+}
+
+model AdministrativeUnit {
+  id          Int     @id @default(autoincrement()) @db.Integer
+  fullName    String? @db.VarChar(255)
+  fullNameEn  String? @db.VarChar(255)
+  shortName   String? @db.VarChar(255)
+  shortNameEn String? @db.VarChar(255)
+  codeName    String? @db.VarChar(255)
+  codeNameEn  String? @db.VarChar(255)
+
+  provinces Province[]
+  districts District[]
+  wards     Ward[]
+}
+
+model Province {
+  code                   String  @id @db.VarChar(20)
+  name                   String  @db.VarChar(255)
+  nameEn                 String? @db.VarChar(255)
+  fullName               String  @db.VarChar(255)
+  fullNameEn             String  @db.VarChar(255)
+  codeName               String? @db.VarChar(255)
+  administrativeUnitId   Int?    @db.Integer
+  administrativeRegionId Int?    @db.Integer
+
+  administrativeUnit   AdministrativeUnit?   @relation(fields: [administrativeUnitId], references: [id])
+  administrativeRegion AdministrativeRegion? @relation(fields: [administrativeRegionId], references: [id])
+  districts            District[]
+
+  @@index([administrativeRegionId], name: "idx_provinces_region")
+  @@index([administrativeUnitId], name: "idx_provinces_unit")
+}
+
+model District {
+  code                 String  @id @db.VarChar(20)
+  name                 String  @db.VarChar(255)
+  nameEn               String? @db.VarChar(255)
+  fullName             String? @db.VarChar(255)
+  fullNameEn           String? @db.VarChar(255)
+  codeName             String? @db.VarChar(255)
+  provinceCode         String? @db.VarChar(20)
+  administrativeUnitId Int?    @db.Integer
+
+  province           Province?           @relation(fields: [provinceCode], references: [code])
+  administrativeUnit AdministrativeUnit? @relation(fields: [administrativeUnitId], references: [id])
+  wards              Ward[]
+
+  @@index([provinceCode], name: "idx_districts_province")
+  @@index([administrativeUnitId], name: "idx_districts_unit")
+}
+
+model Ward {
+  code                 String  @id @db.VarChar(20)
+  name                 String  @db.VarChar(255)
+  nameEn               String? @db.VarChar(255)
+  fullName             String? @db.VarChar(255)
+  fullNameEn           String? @db.VarChar(255)
+  codeName             String? @db.VarChar(255)
+  districtCode         String? @db.VarChar(20)
+  administrativeUnitId Int?    @db.Integer
+
+  district           District?           @relation(fields: [districtCode], references: [code])
+  administrativeUnit AdministrativeUnit? @relation(fields: [administrativeUnitId], references: [id])
+
+  @@index([districtCode], name: "idx_wards_district")
+  @@index([administrativeUnitId], name: "idx_wards_unit")
+}
