@@ -17,11 +17,11 @@ export class SignInDTO {
 }
 
 export class SignUpDTO {
-  @IsNotEmpty({ message: 'firstName is required' })
-  firstName: string;
+  @IsNotEmpty({ message: 'first_name is required' })
+  first_name: string;
 
-  @IsNotEmpty({ message: 'lastName is required' })
-  lastName: string;
+  @IsNotEmpty({ message: 'last_name is required' })
+  last_name: string;
 
   @IsEmail({}, { message: 'Invalid email' })
   @IsNotEmpty({ message: 'email is required' })
@@ -44,6 +44,6 @@ export class SignUpDTO {
   password: string;
 
   @IsTheSameAs('password', { message: "Password doesn't match" })
-  @IsNotEmpty({ message: 'confirmPassword is required' })
-  confirmPassword: string;
+  @IsNotEmpty({ message: 'confirm_password is required' })
+  confirm_password: string;
 }

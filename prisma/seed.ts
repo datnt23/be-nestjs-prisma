@@ -1,26 +1,26 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import {
   EMAIL_ADMIN,
-  FIRSTNAME_ADMIN,
-  FULLNAME_ADMIN,
-  LASTNAME_ADMIN,
+  FIRST_NAME_ADMIN,
+  FULL_NAME_ADMIN,
+  LAST_NAME_ADMIN,
   PASSWORD_ADMIN,
 } from '../src/config';
-import { keyRoles } from '../src/auth/constants';
+import { keyRoles } from '../src/modules/auth/constants';
 
 const prisma: PrismaClient = new PrismaClient();
 
 async function main() {
-  await prisma.user.create({
+  await prisma.users.create({
     data: {
       email: EMAIL_ADMIN,
       password: await bcrypt.hash(PASSWORD_ADMIN, 10),
       roles: [keyRoles.ADMIN],
-      firstName: FIRSTNAME_ADMIN,
-      lastName: LASTNAME_ADMIN,
-      fullName: FULLNAME_ADMIN,
-      displayName: LASTNAME_ADMIN,
+      first_name: FIRST_NAME_ADMIN,
+      last_name: LAST_NAME_ADMIN,
+      full_name: FULL_NAME_ADMIN,
+      display_name: LAST_NAME_ADMIN,
     },
   });
 }

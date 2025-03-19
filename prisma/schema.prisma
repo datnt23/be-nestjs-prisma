@@ -13,94 +13,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model users {
   id          Int       @id @default(autoincrement()) @db.Integer
   email       String    @unique @db.VarChar(255)
   password    String    @db.VarChar(255)
   roles       String[]  @default([]) @db.VarChar(255)
-  firstName   String    @db.VarChar(255)
-  lastName    String    @db.VarChar(255)
-  fullName    String    @db.VarChar(255)
-  displayName String    @db.VarChar(255)
-  createdAt   DateTime  @default(now()) @db.Timestamp()
-  updatedAt   DateTime  @updatedAt @db.Timestamp()
-  deletedAt   DateTime?
+  first_name   String    @db.VarChar(255)
+  last_name    String    @db.VarChar(255)
+  full_name    String    @db.VarChar(255)
+  display_name String    @db.VarChar(255)
+  created_at   DateTime  @default(now()) @db.Timestamp()
+  updated_at   DateTime  @updatedAt @db.Timestamp()
+  deleted_at   DateTime?
 }
 
-// Viet Nam Zone Database
-model AdministrativeRegion {
+//ToDo: Viet Nam Zone Database
+model administrative_regions {
   id         Int     @id @default(autoincrement()) @db.Integer
   name       String  @db.VarChar(255)
-  nameEn     String  @db.VarChar(255)
-  codeName   String? @db.VarChar(255)
-  codeNameEn String? @db.VarChar(255)
+  name_en     String  @db.VarChar(255)
+  code_name   String? @db.VarChar(255)
+  code_name_en String? @db.VarChar(255)
 
-  provinces Province[]
+  provinces provinces[]
 }
 
-model AdministrativeUnit {
+model administrative_units {
   id          Int     @id @default(autoincrement()) @db.Integer
-  fullName    String? @db.VarChar(255)
-  fullNameEn  String? @db.VarChar(255)
-  shortName   String? @db.VarChar(255)
-  shortNameEn String? @db.VarChar(255)
-  codeName    String? @db.VarChar(255)
-  codeNameEn  String? @db.VarChar(255)
+  full_name    String? @db.VarChar(255)
+  full_name_en  String? @db.VarChar(255)
+  short_name   String? @db.VarChar(255)
+  short_name_en String? @db.VarChar(255)
+  code_name    String? @db.VarChar(255)
+  code_name_en  String? @db.VarChar(255)
 
-  provinces Province[]
-  districts District[]
-  wards     Ward[]
+  provinces provinces[]
+  districts districts[]
+  wards     wards[]
 }
 
-model Province {
+model provinces {
   code                   String  @id @db.VarChar(20)
   name                   String  @db.VarChar(255)
-  nameEn                 String? @db.VarChar(255)
-  fullName               String  @db.VarChar(255)
-  fullNameEn             String  @db.VarChar(255)
-  codeName               String? @db.VarChar(255)
-  administrativeUnitId   Int?    @db.Integer
-  administrativeRegionId Int?    @db.Integer
+  name_en                 String? @db.VarChar(255)
+  full_name               String  @db.VarChar(255)
+  full_name_en             String  @db.VarChar(255)
+  code_name               String? @db.VarChar(255)
+  administrative_unit_id   Int?    @db.Integer
+  administrative_region_id Int?    @db.Integer
 
-  administrativeUnit   AdministrativeUnit?   @relation(fields: [administrativeUnitId], references: [id])
-  administrativeRegion AdministrativeRegion? @relation(fields: [administrativeRegionId], references: [id])
-  districts            District[]
+  administrative_unit   administrative_units?   @relation(fields: [administrative_unit_id], references: [id])
+  administrative_region administrative_regions? @relation(fields: [administrative_region_id], references: [id])
+  districts            districts[]
 
-  @@index([administrativeRegionId], name: "idx_provinces_region")
-  @@index([administrativeUnitId], name: "idx_provinces_unit")
+  @@index([administrative_region_id], name: "idx_provinces_region")
+  @@index([administrative_unit_id], name: "idx_provinces_unit")
 }
 
-model District {
+model districts {
   code                 String  @id @db.VarChar(20)
   name                 String  @db.VarChar(255)
-  nameEn               String? @db.VarChar(255)
-  fullName             String? @db.VarChar(255)
-  fullNameEn           String? @db.VarChar(255)
-  codeName             String? @db.VarChar(255)
-  provinceCode         String? @db.VarChar(20)
-  administrativeUnitId Int?    @db.Integer
+  name_en               String? @db.VarChar(255)
+  full_name             String? @db.VarChar(255)
+  full_name_en           String? @db.VarChar(255)
+  code_name             String? @db.VarChar(255)
+  province_code         String? @db.VarChar(20)
+  administrative_unit_id Int?    @db.Integer
 
-  province           Province?           @relation(fields: [provinceCode], references: [code])
-  administrativeUnit AdministrativeUnit? @relation(fields: [administrativeUnitId], references: [id])
-  wards              Ward[]
+  province           provinces?           @relation(fields: [province_code], references: [code])
+  administrative_unit administrative_units? @relation(fields: [administrative_unit_id], references: [id])
+  wards              wards[]
 
-  @@index([provinceCode], name: "idx_districts_province")
-  @@index([administrativeUnitId], name: "idx_districts_unit")
+  @@index([province_code], name: "idx_districts_province")
+  @@index([administrative_unit_id], name: "idx_districts_unit")
 }
 
-model Ward {
+model wards {
   code                 String  @id @db.VarChar(20)
   name                 String  @db.VarChar(255)
-  nameEn               String? @db.VarChar(255)
-  fullName             String? @db.VarChar(255)
-  fullNameEn           String? @db.VarChar(255)
-  codeName             String? @db.VarChar(255)
-  districtCode         String? @db.VarChar(20)
-  administrativeUnitId Int?    @db.Integer
+  name_en               String? @db.VarChar(255)
+  full_name             String? @db.VarChar(255)
+  full_name_en           String? @db.VarChar(255)
+  code_name             String? @db.VarChar(255)
+  district_code         String? @db.VarChar(20)
+  administrative_unit_id Int?    @db.Integer
 
-  district           District?           @relation(fields: [districtCode], references: [code])
-  administrativeUnit AdministrativeUnit? @relation(fields: [administrativeUnitId], references: [id])
+  district           districts?           @relation(fields: [district_code], references: [code])
+  administrative_unit administrative_units? @relation(fields: [administrative_unit_id], references: [id])
 
-  @@index([districtCode], name: "idx_wards_district")
-  @@index([administrativeUnitId], name: "idx_wards_unit")
+  @@index([district_code], name: "idx_wards_district")
+  @@index([administrative_unit_id], name: "idx_wards_unit")
 }
