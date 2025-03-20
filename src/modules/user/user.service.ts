@@ -91,6 +91,8 @@ export class UserService {
     last_name,
     full_name,
     display_name,
+    code_id,
+    code_expired,
   }: CreateUserProps) {
     return await this.prisma.users.create({
       data: {
@@ -101,6 +103,9 @@ export class UserService {
         last_name,
         full_name,
         display_name,
+        is_active: false,
+        code_id,
+        code_expired,
       },
     });
   }

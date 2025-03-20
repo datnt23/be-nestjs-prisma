@@ -42,6 +42,7 @@ $ npm install
 
 ```bash
 $ npx prisma migrate dev --name initial
+$ npx prisma db seed
 ```
 
 ## Compile and run the project

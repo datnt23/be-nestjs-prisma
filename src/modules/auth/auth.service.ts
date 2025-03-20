@@ -5,7 +5,10 @@ import { keyRoles } from './constants';
 import bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { ConfigService } from '@nestjs/config';
-import { SignUpDTO } from 'src/dto/auth.dto';
+import { SignUpDTO } from '../../dto/auth.dto';
+import { MailService } from '../../mail/mail.service';
+import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +16,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -58,6 +62,9 @@ export class AuthService {
   }
 
   async signUp(signUpDTO: SignUpDTO): Promise<any> {
+    const codeId = uuidv4();
+    const codeExpired = dayjs().add(30, 'seconds').toDate();
+
     const { email, first_name, last_name, password } = signUpDTO;
     //? check email is exists?
     const foundUser = await this.userService.findByEmail(email);
@@ -78,7 +85,12 @@ export class AuthService {
       last_name,
       full_name,
       display_name: last_name,
+      code_id: codeId,
+      code_expired: codeExpired,
     });
+
+    //* send email is confirm
+    await this.mailService.sendConfirmationEmail(newUser, codeId);
 
     return {
       user: {

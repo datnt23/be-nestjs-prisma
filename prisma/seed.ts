@@ -21,6 +21,7 @@ async function main() {
       last_name: LAST_NAME_ADMIN,
       full_name: FULL_NAME_ADMIN,
       display_name: LAST_NAME_ADMIN,
+      is_active: true,
     },
   });
 }

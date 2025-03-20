@@ -6,4 +6,6 @@ export type CreateUserProps = {
   last_name: string;
   full_name: string;
   display_name: string;
+  code_id: string;
+  code_expired: string | Date;
 };

@@ -14,10 +14,15 @@ import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { Public } from './decorator/public.decorator';
+import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from 'src/mail/mail.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly mailService: MailService,
+  ) {}
 
   // @UseGuards(AuthGuard("local"))
   @Public()
@@ -44,4 +49,10 @@ export class AuthController {
   getProfile(@Request() req) {
     return req.user;
   }
+
+  // @Get('mail')
+  // async checkMail(@Request() req) {
+  //   await this.mailService.sendConfirmationEmail(req.user);
+  //   return 'ok';
+  // }
 }
