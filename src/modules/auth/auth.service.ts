@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { format } from 'date-fns';
 import { keyRoles } from './constants';
 import bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
@@ -41,22 +40,23 @@ export class AuthService {
 
     // const user = await this.validateUser(email, password);
     const payload = {
-      userId: user.id,
+      id: user.id,
       email: user.email,
-      name: user.full_name,
+      full_name: user.full_name,
     };
+
     return {
-      // user: {
-      //   id: user.id,
-      //   email: user.email,
-      //   first_name: user.first_name,
-      //   last_name: user.last_name,
-      //   full_name: user.full_name,
-      //   display_name: user.display_name,
-      //   roles: user.roles,
-      //   created_at: format(user.created_at, 'dd-MM-yyyy ss:mm:HH'),
-      //   updated_at: format(user.updated_at, 'dd-MM-yyyy ss:mm:HH'),
-      // },
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        // display_name: user.display_name,
+        // first_name: user.first_name,
+        // last_name: user.last_name,
+        // roles: user.roles,
+        // created_at: dayjs(user.created_at).format('DD-MM-YYYY HH:mm:ss'),
+        // updated_at: dayjs(user.updated_at).format('DD-MM-YYYY HH:mm:ss'),
+      },
       access_token: this.jwtService.sign(payload),
     };
   }
@@ -96,13 +96,13 @@ export class AuthService {
       user: {
         id: newUser.id,
         email: newUser.email,
+        display_name: newUser.display_name,
         first_name: newUser.first_name,
         last_name: newUser.last_name,
         full_name: newUser.full_name,
-        display_name: newUser.display_name,
         roles: newUser.roles,
-        created_at: format(newUser.created_at, 'dd-MM-yyyy ss:mm:HH'),
-        updated_at: format(newUser.updated_at, 'dd-MM-yyyy ss:mm:HH'),
+        created_at: dayjs(newUser.created_at).format('DD-MM-YYYY HH:mm:ss'),
+        updated_at: dayjs(newUser.updated_at).format('DD-MM-YYYY HH:mm:ss'),
       },
     };
   }

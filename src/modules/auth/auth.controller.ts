@@ -13,9 +13,9 @@ import { SignInDTO, SignUpDTO } from '../../dto/auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
-import { Public } from './decorator/public.decorator';
-import { MailerService } from '@nestjs-modules/mailer';
-import { MailService } from 'src/mail/mail.service';
+import { Public } from '../../decorator/public.decorator';
+import { MailService } from '../../mail/mail.service';
+import { ResponseMessage } from '../../decorator/response_message.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -25,9 +25,10 @@ export class AuthController {
   ) {}
 
   // @UseGuards(AuthGuard("local"))
+  @Post('login')
   @Public()
   @UseGuards(LocalAuthGuard)
-  @Post('login')
+  @ResponseMessage('Log in successfully')
   async handleLogin(@Request() req) {
     return this.authService.signIn(req.user);
   }

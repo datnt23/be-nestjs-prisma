@@ -4,7 +4,7 @@ import {
   IsStrongPassword,
   MinLength,
 } from 'class-validator';
-import { IsTheSameAs } from '../validators/auth';
+import { IsTheSameAs } from '../decorator/auth.decorator';
 
 export class SignInDTO {
   @IsEmail({}, { message: 'Invalid email' })
