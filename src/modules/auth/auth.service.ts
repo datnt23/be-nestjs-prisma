@@ -4,7 +4,7 @@ import { keyRoles } from './constants';
 import bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { ConfigService } from '@nestjs/config';
-import { SignUpDTO } from '../../dto/auth.dto';
+import { CodeAuthDTO, SignUpDTO } from '../../dto/auth.dto';
 import { MailService } from '../../mail/mail.service';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
@@ -63,7 +63,7 @@ export class AuthService {
 
   async signUp(signUpDTO: SignUpDTO): Promise<any> {
     const codeId = uuidv4();
-    const codeExpired = dayjs().add(30, 'seconds').toDate();
+    const codeExpired = dayjs().add(1, 'minutes').toDate();
 
     const { email, first_name, last_name, password } = signUpDTO;
     //? check email is exists?
@@ -105,5 +105,22 @@ export class AuthService {
         updated_at: dayjs(newUser.updated_at).format('DD-MM-YYYY HH:mm:ss'),
       },
     };
+  }
+
+  async checkCode(codeAuthDTO: CodeAuthDTO): Promise<any> {
+    const { id, code } = codeAuthDTO;
+
+    //? check user is exists?
+    const user = await this.userService.findByIdAndCode(id, code);
+    if (!user) throw new BadRequestException('Id or Code is invalid');
+
+    //? check code is expired?
+    const isExpired = dayjs().isBefore(user.code_expired);
+    if (!isExpired) throw new BadRequestException('Code has expired');
+
+    //* update user is active
+    await this.userService.handleActive(id);
+
+    return;
   }
 }

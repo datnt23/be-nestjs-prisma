@@ -18,7 +18,7 @@ async function bootstrap() {
   );
 
   app.use(logger);
-
+  app.enableCors();
   await app.listen(port || 3000);
   console.log(`Server is running on http://localhost:${port}`);
 }

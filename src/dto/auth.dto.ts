@@ -47,3 +47,11 @@ export class SignUpDTO {
   @IsNotEmpty({ message: 'confirm_password is required' })
   confirm_password: string;
 }
+
+export class CodeAuthDTO {
+  @IsNotEmpty({ message: 'id is required' })
+  id: number;
+
+  @IsNotEmpty({ message: 'code is required' })
+  code: string;
+}

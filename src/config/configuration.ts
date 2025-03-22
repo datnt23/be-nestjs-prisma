@@ -7,10 +7,12 @@ export default () => ({
   KEY_REFRESH_TOKEN: process.env.REFRESH_TOKEN_SECRET || '',
   EXPIRES_IN_REFRESH_TOKEN:
     process.env.JWT_JWT_EXPIRES_IN_REFRESH_TOKEN || '7 days',
-  // Admin
-  EMAIL_ADMIN: process.env.EMAIL_ADMIN || 'admin@gmail.com',
-  PASSWORD_ADMIN: process.env.PASSWORD_ADMIN || 'password',
-  FIRST_NAME_ADMIN: process.env.FIRST_NAME_ADMIN || 'Super',
-  LAST_NAME_ADMIN: process.env.LAST_NAME_ADMIN || 'Admin',
-  FULL_NAME_ADMIN: process.env.FULL_NAME_ADMIN || 'Super Admin',
 });
+
+// Admin
+export const EMAIL_ADMIN: string = process.env.EMAIL_ADMIN || 'admin@gmail.com';
+export const PASSWORD_ADMIN: string = process.env.PASSWORD_ADMIN || 'password';
+export const FIRST_NAME_ADMIN: string = process.env.FIRST_NAME_ADMIN || 'Super';
+export const LAST_NAME_ADMIN: string = process.env.LAST_NAME_ADMIN || 'Admin';
+export const FULL_NAME_ADMIN: string =
+  process.env.FULL_NAME_ADMIN || 'Super Admin';

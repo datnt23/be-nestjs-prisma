@@ -1,13 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import { keyRoles } from '../src/modules/auth/constants';
 import {
   EMAIL_ADMIN,
   FIRST_NAME_ADMIN,
   FULL_NAME_ADMIN,
   LAST_NAME_ADMIN,
   PASSWORD_ADMIN,
-} from '../src/config';
-import { keyRoles } from '../src/modules/auth/constants';
+} from '../src/config/configuration';
 
 const prisma: PrismaClient = new PrismaClient();
 

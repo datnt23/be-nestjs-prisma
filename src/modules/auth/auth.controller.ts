@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignInDTO, SignUpDTO } from '../../dto/auth.dto';
+import { CodeAuthDTO, SignInDTO, SignUpDTO } from '../../dto/auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
@@ -25,24 +25,33 @@ export class AuthController {
   ) {}
 
   // @UseGuards(AuthGuard("local"))
-  @Post('login')
   @Public()
+  @Post('login')
   @UseGuards(LocalAuthGuard)
-  @ResponseMessage('Log in successfully')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Login successfully')
   async handleLogin(@Request() req) {
     return this.authService.signIn(req.user);
   }
-  // @HttpCode(HttpStatus.OK)
   // @Post('login')
   // signIn(@Body() signInDTO: SignInDTO) {
   //   return this.authService.signIn(signInDTO.email, signInDTO.password);
   // }
 
-  @HttpCode(HttpStatus.CREATED)
   @Public()
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ResponseMessage('Registration successfully')
   async signUp(@Body() signUpDTO: SignUpDTO) {
     return this.authService.signUp(signUpDTO);
+  }
+
+  @Public()
+  @Post('check-code')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Email code verified successfully')
+  async checkCode(@Body() codeAuthDTO: CodeAuthDTO) {
+    return this.authService.checkCode(codeAuthDTO);
   }
 
   // @UseGuards(JwtAuthGuard)

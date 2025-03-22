@@ -12,13 +12,15 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
+import { ResponseMessage } from '../../decorator/response_message.decorator';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @HttpCode(HttpStatus.OK)
   @Get()
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Get user list successfully')
   async findAll(
     @Query() query: string,
     @Query('page', ParseIntPipe) page: number,
@@ -34,32 +36,37 @@ export class UserController {
     });
   }
 
-  @HttpCode(HttpStatus.OK)
   @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Get user successfully')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.getById(id);
   }
 
-  @HttpCode(HttpStatus.OK)
   @Patch(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
-    return this.userService.update(id, data);
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('User updated successfully')
+  async update(@Param('id', ParseIntPipe) id: number, @Body() payload: any) {
+    return this.userService.update(id, payload);
   }
 
-  @HttpCode(HttpStatus.OK)
   @Delete(':id/remove')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('User deleted successfully')
   async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.deleteAt(id);
+    return this.userService.remove(id);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post(':id/restore')
+  @ResponseMessage('User restored successfully')
   async restore(@Param('id', ParseIntPipe) id: number) {
     return this.userService.restore(id);
   }
 
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('User deleted from the database successfully')
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.userService.delete(id);
   }

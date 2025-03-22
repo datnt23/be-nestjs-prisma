@@ -10,6 +10,7 @@ import { CreateUserProps } from './types';
 import { PaginationDTO } from '../../dto/pagination.dto';
 import { getSelectData } from '../../util';
 import aqp from 'api-query-params';
+import { CodeAuthDTO } from 'src/dto/auth.dto';
 
 @Injectable()
 export class UserService {
@@ -23,13 +24,17 @@ export class UserService {
     return await this.prisma.users.findUnique({ where: { id } });
   }
 
+  async findByIdAndCode(id: number, code: string): Promise<users | null> {
+    return await this.prisma.users.findUnique({ where: { id, code_id: code } });
+  }
+
   async findAllNotAdmin({
     query,
     page = 1,
     limit = 10,
     sort = 'id',
-    order = 'desc',
-    select = [],
+    order = 'asc',
+    unSelect = [],
   }: {
     query: string;
     page?: number;
@@ -37,10 +42,9 @@ export class UserService {
     sort?: string;
     order?: string;
     search?: string;
-    select?: string[];
+    unSelect?: string[];
   }): Promise<any> {
     const { filter } = aqp(query);
-
     if (filter.page) delete filter.page;
     if (filter.order) delete filter.order;
 
@@ -57,11 +61,12 @@ export class UserService {
     const whereCondition = {
       ...filter,
       deleted_at: null,
-      NOT: {
-        roles: {
-          has: 'admin',
-        },
-      },
+      //! Get Admin
+      // NOT: {
+      //   roles: {
+      //     has: 'admin',
+      //   },
+      // },
     };
 
     const skip = (page - 1) * limit;
@@ -72,15 +77,28 @@ export class UserService {
     });
     const totalPages = Math.ceil(totalItems / limit);
 
-    const data = await this.prisma.users.findMany({
+    const users = await this.prisma.users.findMany({
       where: whereCondition,
       take: limit,
       skip,
       orderBy: sortBy,
-      omit: getSelectData(select),
+      omit: getSelectData(unSelect),
     });
 
-    return { data, total_pages: totalPages, total_items: totalItems };
+    return {
+      users,
+      current_page: page,
+      total_pages: totalPages,
+      total_items: totalItems,
+    };
+  }
+
+  async checkUserExistsById(id: number) {
+    const user = await this.findOne(id);
+
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+
+    return user;
   }
 
   async create({
@@ -114,39 +132,27 @@ export class UserService {
     return await this.findAllNotAdmin({
       query,
       ...paginationDTO,
-      select: ['password', 'deleted_at'],
+      unSelect: ['password', 'deleted_at'],
     });
   }
 
-  async getById(id: number): Promise<any> {
-    const user = await this.findOne(id);
-
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-
-    return user;
+  async getById(id: number) {
+    return await this.checkUserExistsById(id);
   }
 
-  async update(id: number, data: any) {
-    const user = await this.findOne(id);
+  async update(id: number, payload: any) {
+    await this.checkUserExistsById(id);
 
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-
-    const updated = await this.prisma.users.update({
+    return await this.prisma.users.update({
       where: { id },
-      data,
+      data: payload,
     });
-
-    return {
-      message: 'User updated successfully',
-      status: HttpStatus.OK,
-      data: { user: updated },
-    };
   }
 
-  async deleteAt(id: number) {
-    const user = await this.findOne(id);
+  async remove(id: number) {
+    const user = await this.checkUserExistsById(id);
 
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+    if (user.deleted_at) throw new BadRequestException('User is deleted');
 
     await this.prisma.users.update({
       where: { id },
@@ -155,41 +161,39 @@ export class UserService {
       },
     });
 
-    return {
-      message: 'User deleted successfully',
-      status: HttpStatus.OK,
-    };
+    return;
   }
 
   async restore(id: number) {
-    const user = await this.findOne(id);
+    const user = await this.checkUserExistsById(id);
 
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     if (!user.deleted_at) throw new BadRequestException('User is not deleted');
 
-    await this.prisma.users.update({
+    return await this.prisma.users.update({
       where: { id },
       data: {
         deleted_at: null,
       },
+      omit: getSelectData([
+        'password',
+        'is_active',
+        'code_id',
+        'code_expired',
+        'deleted_at',
+      ]),
     });
-
-    return {
-      message: 'User restored successfully',
-      status: HttpStatus.OK,
-    };
   }
 
   async delete(id: number) {
-    const user = await this.findOne(id);
-
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-
+    await this.checkUserExistsById(id);
     await this.prisma.users.delete({ where: { id } });
+    return;
+  }
 
-    return {
-      message: 'User deleted in database successfully',
-      status: HttpStatus.OK,
-    };
+  async handleActive(id: number): Promise<users | null> {
+    return await this.prisma.users.update({
+      where: { id },
+      data: { is_active: true },
+    });
   }
 }
