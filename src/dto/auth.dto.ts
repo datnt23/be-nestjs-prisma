@@ -55,3 +55,9 @@ export class CodeAuthDTO {
   @IsNotEmpty({ message: 'code is required' })
   code: string;
 }
+
+export class EmailDTO {
+  @IsEmail({}, { message: 'Invalid email' })
+  @IsNotEmpty({ message: 'email is required' })
+  email: string;
+}

@@ -5,8 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { users } from '@prisma/client';
-import { CreateUserProps } from './types';
+import { Prisma, users } from '@prisma/client';
+import { CreateUserProps, FindUserProps } from './types';
 import { PaginationDTO } from '../../dto/pagination.dto';
 import { getSelectData } from '../../util';
 import aqp from 'api-query-params';
@@ -20,8 +20,8 @@ export class UserService {
     return await this.prisma.users.findUnique({ where: { email: email } });
   }
 
-  async findOne(id: number): Promise<users | null> {
-    return await this.prisma.users.findUnique({ where: { id } });
+  async findOne(payload: Prisma.usersWhereInput): Promise<users | null> {
+    return await this.prisma.users.findFirst({ where: payload });
   }
 
   async findByIdAndCode(id: number, code: string): Promise<users | null> {
@@ -94,7 +94,7 @@ export class UserService {
   }
 
   async checkUserExistsById(id: number) {
-    const user = await this.findOne(id);
+    const user = await this.findOne({ id });
 
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
 
@@ -194,6 +194,13 @@ export class UserService {
     return await this.prisma.users.update({
       where: { id },
       data: { is_active: true },
+    });
+  }
+
+  async updateOne(id: number, payload: any): Promise<users | null> {
+    return await this.prisma.users.update({
+      where: { id },
+      data: payload,
     });
   }
 }

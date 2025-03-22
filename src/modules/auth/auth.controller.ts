@@ -9,7 +9,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CodeAuthDTO, SignInDTO, SignUpDTO } from '../../dto/auth.dto';
+import {
+  CodeAuthDTO,
+  EmailDTO,
+  SignInDTO,
+  SignUpDTO,
+} from '../../dto/auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
@@ -47,11 +52,19 @@ export class AuthController {
   }
 
   @Public()
-  @Post('check-code')
+  @Post('active')
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Email code verified successfully')
-  async checkCode(@Body() codeAuthDTO: CodeAuthDTO) {
-    return this.authService.checkCode(codeAuthDTO);
+  async activeEmail(@Body() codeAuthDTO: CodeAuthDTO) {
+    return this.authService.activeEmail(codeAuthDTO);
+  }
+
+  @Public()
+  @Post('retry-active')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('A verification code has been sent to the email')
+  async retryActive(@Body() body: EmailDTO) {
+    return this.authService.retryActive(body.email);
   }
 
   // @UseGuards(JwtAuthGuard)

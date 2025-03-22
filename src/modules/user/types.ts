@@ -11,7 +11,7 @@ export type CreateUserProps = {
 };
 
 export type FindUserProps = {
-  id: number;
+  id?: number;
   email?: string;
   password?: string;
   roles?: string[];

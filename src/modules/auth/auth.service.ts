@@ -107,7 +107,7 @@ export class AuthService {
     };
   }
 
-  async checkCode(codeAuthDTO: CodeAuthDTO): Promise<any> {
+  async activeEmail(codeAuthDTO: CodeAuthDTO): Promise<any> {
     const { id, code } = codeAuthDTO;
 
     //? check user is exists?
@@ -119,8 +119,33 @@ export class AuthService {
     if (!isExpired) throw new BadRequestException('Code has expired');
 
     //* update user is active
-    await this.userService.handleActive(id);
+    await this.userService.updateOne(id, { is_active: true });
 
     return;
+  }
+
+  async retryActive(email: string): Promise<any> {
+    //? check user is exists?
+    const user = await this.userService.findByEmail(email);
+    if (!user) throw new BadRequestException('Email not found');
+    //? check email is active?
+    if (user.is_active)
+      throw new BadRequestException('Email has been activated');
+
+    const codeId = uuidv4();
+    const codeExpired = dayjs().add(1, 'minutes').toDate();
+
+    //* update user
+    await this.userService.updateOne(user.id, {
+      code_id: codeId,
+      code_expired: codeExpired,
+    });
+
+    //* send email is confirm
+    await this.mailService.sendConfirmationEmail(user, codeId);
+
+    return {
+      id: user.id,
+    };
   }
 }
