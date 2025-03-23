@@ -4,7 +4,7 @@ import { keyRoles } from './constants';
 import bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { ConfigService } from '@nestjs/config';
-import { CodeAuthDTO, SignUpDTO } from '../../dto/auth.dto';
+import { ForgotPasswordDTO, CodeAuthDTO, SignUpDTO } from '../../dto/auth.dto';
 import { MailService } from '../../mail/mail.service';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
@@ -31,8 +31,7 @@ export class AuthService {
 
   async signIn(user: any): Promise<any> {
     //? check email is exists?
-    // const user = await this.userService.findByEmail(email);
-    // if (!user) throw new BadRequestException('User not found');
+    // const user = await this.userService.checkEmailExists(email);
 
     //? check password matches?
     // const isPasswordMatches = await bcrypt.compare(password, user.password);
@@ -67,8 +66,7 @@ export class AuthService {
 
     const { email, first_name, last_name, password } = signUpDTO;
     //? check email is exists?
-    const foundUser = await this.userService.findByEmail(email);
-    if (foundUser) throw new BadRequestException('User already exists');
+    await this.userService.checkEmailExists(email);
 
     //* hash password
     const hashPassword = await bcrypt.hash(password, 10);
@@ -90,7 +88,7 @@ export class AuthService {
     });
 
     //* send email is confirm
-    await this.mailService.sendConfirmationEmail(newUser, codeId);
+    await this.mailService.sendEmail(newUser, codeId);
 
     return {
       user: {
@@ -107,7 +105,7 @@ export class AuthService {
     };
   }
 
-  async activeEmail(codeAuthDTO: CodeAuthDTO): Promise<any> {
+  async verifyEmail(codeAuthDTO: CodeAuthDTO): Promise<any> {
     const { id, code } = codeAuthDTO;
 
     //? check user is exists?
@@ -124,10 +122,9 @@ export class AuthService {
     return;
   }
 
-  async retryActive(email: string): Promise<any> {
+  async resendVerificationEmail(email: string): Promise<any> {
     //? check user is exists?
-    const user = await this.userService.findByEmail(email);
-    if (!user) throw new BadRequestException('Email not found');
+    const user = await this.userService.checkEmailExists(email);
     //? check email is active?
     if (user.is_active)
       throw new BadRequestException('Email has been activated');
@@ -142,10 +139,57 @@ export class AuthService {
     });
 
     //* send email is confirm
-    await this.mailService.sendConfirmationEmail(user, codeId);
+    await this.mailService.sendEmail(user, codeId);
 
     return {
       id: user.id,
     };
+  }
+
+  async forgotPassword(email: string): Promise<any> {
+    //? check email is exists?
+    const user = await this.userService.checkEmailExists(email);
+
+    const codeId = uuidv4();
+    const codeExpired = dayjs().add(1, 'minutes').toDate();
+
+    //* update user
+    await this.userService.updateOne(user.id, {
+      code_id: codeId,
+      code_expired: codeExpired,
+    });
+
+    //* send email
+    await this.mailService.sendEmail(
+      user,
+      codeId,
+      'Change your password account!',
+    );
+
+    return {
+      id: user.id,
+      email,
+    };
+  }
+
+  async resetPassword(data: ForgotPasswordDTO): Promise<any> {
+    const { code, email, password } = data;
+    //? check email is exists?
+    const user = await this.userService.findByEmailAndCode(email, code);
+    if (!user) throw new BadRequestException('Email or Code is invalid');
+
+    //? check code is expired?
+    const isExpired = dayjs().isBefore(user.code_expired);
+    if (!isExpired) throw new BadRequestException('Code has expired');
+
+    //* hash password
+    const hashPassword = await bcrypt.hash(password, 10);
+
+    //* update password
+    await this.userService.updateOne(user.id, {
+      password: hashPassword,
+    });
+
+    return;
   }
 }

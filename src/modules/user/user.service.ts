@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -26,6 +25,12 @@ export class UserService {
 
   async findByIdAndCode(id: number, code: string): Promise<users | null> {
     return await this.prisma.users.findUnique({ where: { id, code_id: code } });
+  }
+
+  async findByEmailAndCode(email: string, code: string): Promise<users | null> {
+    return await this.prisma.users.findUnique({
+      where: { email, code_id: code },
+    });
   }
 
   async findAllNotAdmin({
@@ -97,6 +102,14 @@ export class UserService {
     const user = await this.findOne({ id });
 
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+
+    return user;
+  }
+
+  async checkEmailExists(email: string) {
+    const user = await this.findByEmail(email);
+
+    if (!user) throw new NotFoundException('Email not found');
 
     return user;
   }

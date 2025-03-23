@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
+  ForgotPasswordDTO,
   CodeAuthDTO,
   EmailDTO,
   SignInDTO,
@@ -52,19 +53,35 @@ export class AuthController {
   }
 
   @Public()
-  @Post('active')
+  @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Email code verified successfully')
-  async activeEmail(@Body() codeAuthDTO: CodeAuthDTO) {
-    return this.authService.activeEmail(codeAuthDTO);
+  async verifyEmail(@Body() codeAuthDTO: CodeAuthDTO) {
+    return this.authService.verifyEmail(codeAuthDTO);
   }
 
   @Public()
-  @Post('retry-active')
+  @Post('resend-verification')
   @HttpCode(HttpStatus.OK)
-  @ResponseMessage('A verification code has been sent to the email')
-  async retryActive(@Body() body: EmailDTO) {
-    return this.authService.retryActive(body.email);
+  @ResponseMessage('Verification code sent to new email')
+  async resendVerification(@Body() body: EmailDTO) {
+    return this.authService.resendVerificationEmail(body.email);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Password reset code sent to your email')
+  async forgotPassword(@Body() body: EmailDTO) {
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('A reset password code has been sent to the email')
+  async resetPassword(@Body() body: ForgotPasswordDTO) {
+    return this.authService.resetPassword(body);
   }
 
   // @UseGuards(JwtAuthGuard)
@@ -72,10 +89,4 @@ export class AuthController {
   getProfile(@Request() req) {
     return req.user;
   }
-
-  // @Get('mail')
-  // async checkMail(@Request() req) {
-  //   await this.mailService.sendConfirmationEmail(req.user);
-  //   return 'ok';
-  // }
 }

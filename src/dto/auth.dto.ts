@@ -61,3 +61,19 @@ export class EmailDTO {
   @IsNotEmpty({ message: 'email is required' })
   email: string;
 }
+
+export class ForgotPasswordDTO {
+  @IsNotEmpty({ message: 'code is required' })
+  code: string;
+
+  @IsEmail({}, { message: 'Invalid email' })
+  @IsNotEmpty({ message: 'email is required' })
+  email: string;
+
+  @IsNotEmpty({ message: 'password is required' })
+  password: string;
+
+  @IsTheSameAs('password', { message: "Password doesn't match" })
+  @IsNotEmpty({ message: 'confirm_password is required' })
+  confirm_password: string;
+}
