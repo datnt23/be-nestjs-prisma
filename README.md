@@ -72,3 +72,6 @@ $ mau deploy
 
 This project is [MIT licensed](LICENSE).
 
+# Table of Contents
+- [English](#english)
+- [Vietnamese](#vietnamese)
