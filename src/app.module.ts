@@ -6,7 +6,11 @@ import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guard/jwt-auth.guard';
 import { MailModule } from './mail/mail.module';
-import { TransformInterceptor } from './core/transform.interceptor';
+import { TransformInterceptor } from './common/core/transform.interceptor';
+import { RolesGuard } from './modules/auth/guard/roles.guard';
+import { PermissionsGuard } from './modules/auth/guard/permissions.guard';
+import { RoleModule } from './modules/role/role.module';
+import { PermissionModule } from './modules/permission/permission.module';
 
 @Module({
   imports: [
@@ -15,12 +19,21 @@ import { TransformInterceptor } from './core/transform.interceptor';
     PrismaModule,
     UserModule,
     MailModule,
+    RoleModule,
+    PermissionModule,
   ],
-  controllers: [],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
     },
     {
       provide: APP_INTERCEPTOR,

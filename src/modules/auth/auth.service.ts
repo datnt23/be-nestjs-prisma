@@ -1,120 +1,126 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { keyRoles } from './constants';
 import bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { ConfigService } from '@nestjs/config';
-import { ForgotPasswordDTO, CodeAuthDTO, SignUpDTO } from '../../dto/auth.dto';
+import {
+  ForgotPasswordDTO,
+  SignUpDTO,
+  VerifyEmailDTO,
+} from '../../common/dto/auth.dto';
 import { MailService } from '../../mail/mail.service';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
+import { JwtPayload } from './strategy/jwt.strategy';
+import { Role } from '../../common/enum/role.enum';
+import { PrismaService } from '../prisma/prisma.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private prisma: PrismaService,
     private userService: UserService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly mailService: MailService,
   ) {}
 
+  async checkCodeIsExpired(user: User): Promise<any> {
+    const isExpired = dayjs().isBefore(user.code_expired);
+    if (!isExpired) throw new BadRequestException('Code has expired');
+
+    return;
+  }
+
+  async createCodeExpired(): Promise<any> {
+    const codeId = await uuidv4();
+    const codeExpired = await dayjs().add(1, 'minutes').toDate();
+    return { codeId, codeExpired };
+  }
+
   async validateUser(email: string, password: string): Promise<any> {
     //? check email is exists?
     const user = await this.userService.findByEmail(email);
+    if (!user) return null;
+
     //? check password matches?
     const isPasswordMatches = await bcrypt.compare(password, user.password);
-
-    if (!user || !isPasswordMatches) return null;
+    if (!isPasswordMatches) return null;
 
     return user;
   }
 
   async signIn(user: any): Promise<any> {
-    //? check email is exists?
-    // const user = await this.userService.checkEmailExists(email);
-
-    //? check password matches?
-    // const isPasswordMatches = await bcrypt.compare(password, user.password);
-    // if (!isPasswordMatches) throw new UnauthorizedException('Invalid password');
-
-    // const user = await this.validateUser(email, password);
-    const payload = {
+    const payload: JwtPayload = {
       id: user.id,
       email: user.email,
-      full_name: user.full_name,
     };
+
+    const accessToken = this.jwtService.sign(payload);
 
     return {
       user: {
         id: user.id,
         email: user.email,
-        full_name: user.full_name,
-        // display_name: user.display_name,
-        // first_name: user.first_name,
-        // last_name: user.last_name,
-        // roles: user.roles,
-        // created_at: dayjs(user.created_at).format('DD-MM-YYYY HH:mm:ss'),
-        // updated_at: dayjs(user.updated_at).format('DD-MM-YYYY HH:mm:ss'),
       },
-      access_token: this.jwtService.sign(payload),
+      access_token: accessToken,
     };
   }
 
   async signUp(signUpDTO: SignUpDTO): Promise<any> {
-    const codeId = uuidv4();
-    const codeExpired = dayjs().add(1, 'minutes').toDate();
-
     const { email, first_name, last_name, password } = signUpDTO;
     //? check email is exists?
-    await this.userService.checkEmailExists(email);
+    const user = await this.userService.findByEmail(email);
+
+    if (user) throw new BadRequestException('Email already exists');
+
+    const userRole = await this.prisma.role.findFirst({
+      where: { name: Role.USER },
+    });
+
+    if (!userRole) throw new BadRequestException('Role not found');
 
     //* hash password
     const hashPassword = await bcrypt.hash(password, 10);
 
-    //* handle get full name
-    const full_name = `${first_name} ${last_name}`;
+    const { codeId, codeExpired } = await this.createCodeExpired();
 
     //* create new user
     const newUser = await this.userService.create({
       email,
       password: hashPassword,
-      roles: [keyRoles.GUEST],
       first_name,
       last_name,
-      full_name,
-      display_name: last_name,
       code_id: codeId,
       code_expired: codeExpired,
+      roles: { create: { role_id: userRole.id } },
     });
 
     //* send email is confirm
     await this.mailService.sendEmail(newUser, codeId);
 
-    return {
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        display_name: newUser.display_name,
-        first_name: newUser.first_name,
-        last_name: newUser.last_name,
-        full_name: newUser.full_name,
-        roles: newUser.roles,
-        created_at: dayjs(newUser.created_at).format('DD-MM-YYYY HH:mm:ss'),
-        updated_at: dayjs(newUser.updated_at).format('DD-MM-YYYY HH:mm:ss'),
-      },
-    };
+    return { id: newUser.id, email: newUser.email };
   }
 
-  async verifyEmail(codeAuthDTO: CodeAuthDTO): Promise<any> {
-    const { id, code } = codeAuthDTO;
+  async verifyEmail(verifyEmailDTO: VerifyEmailDTO): Promise<any> {
+    const { id, code } = verifyEmailDTO;
 
     //? check user is exists?
-    const user = await this.userService.findByIdAndCode(id, code);
-    if (!user) throw new BadRequestException('Id or Code is invalid');
+    const user = await this.userService.findById(id);
+    if (!user) throw new BadRequestException('Id is invalid');
+    //? check email is active?
+    if (user.is_active)
+      throw new BadRequestException('Email has been activated');
+    //? check code is invalid?
+    if (user.code_id !== code) throw new BadRequestException('Code is invalid');
 
     //? check code is expired?
-    const isExpired = dayjs().isBefore(user.code_expired);
-    if (!isExpired) throw new BadRequestException('Code has expired');
+    await this.checkCodeIsExpired(user);
 
     //* update user is active
     await this.userService.updateOne(id, { is_active: true });
@@ -124,13 +130,14 @@ export class AuthService {
 
   async resendVerificationEmail(email: string): Promise<any> {
     //? check user is exists?
-    const user = await this.userService.checkEmailExists(email);
+    const user = await this.userService.findByEmail(email);
+    if (!user) throw new NotFoundException('Email not found');
+
     //? check email is active?
     if (user.is_active)
       throw new BadRequestException('Email has been activated');
 
-    const codeId = uuidv4();
-    const codeExpired = dayjs().add(1, 'minutes').toDate();
+    const { codeId, codeExpired } = await this.createCodeExpired();
 
     //* update user
     await this.userService.updateOne(user.id, {
@@ -148,10 +155,10 @@ export class AuthService {
 
   async forgotPassword(email: string): Promise<any> {
     //? check email is exists?
-    const user = await this.userService.checkEmailExists(email);
+    const user = await this.userService.findByEmail(email);
+    if (!user) throw new NotFoundException('Email not found');
 
-    const codeId = uuidv4();
-    const codeExpired = dayjs().add(1, 'minutes').toDate();
+    const { codeId, codeExpired } = await this.createCodeExpired();
 
     //* update user
     await this.userService.updateOne(user.id, {
@@ -175,21 +182,47 @@ export class AuthService {
   async resetPassword(data: ForgotPasswordDTO): Promise<any> {
     const { code, email, password } = data;
     //? check email is exists?
-    const user = await this.userService.findByEmailAndCode(email, code);
-    if (!user) throw new BadRequestException('Email or Code is invalid');
+    const user = await this.userService.findByEmail(email);
+    if (!user) throw new BadRequestException('Email not found');
+
+    //? check code is invalid?
+    if (user.code_id !== code) throw new BadRequestException('Code is invalid');
 
     //? check code is expired?
-    const isExpired = dayjs().isBefore(user.code_expired);
-    if (!isExpired) throw new BadRequestException('Code has expired');
+    await this.checkCodeIsExpired(user);
 
-    //* hash password
-    const hashPassword = await bcrypt.hash(password, 10);
+    //* hash new password
+    const newPassword = await bcrypt.hash(password, 10);
 
     //* update password
     await this.userService.updateOne(user.id, {
-      password: hashPassword,
+      password: newPassword,
     });
 
     return;
+  }
+
+  async getProfile(payload: JwtPayload): Promise<any> {
+    const { id } = payload;
+
+    //? check user is exists?
+    const user = await this.userService.findById(id);
+    if (!user) throw new NotFoundException('User not found');
+
+    //* handle get full name
+    const full_name = `${user.first_name} ${user.last_name}`;
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        full_name,
+        roles: user.roles.map((userRole) => userRole.role.name),
+        created_at: dayjs(user.created_at).format('DD-MM-YYYY HH:mm:ss'),
+        updated_at: dayjs(user.updated_at).format('DD-MM-YYYY HH:mm:ss'),
+      },
+    };
   }
 }

@@ -1,20 +1,12 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsString,
   IsStrongPassword,
+  IsUUID,
   MinLength,
 } from 'class-validator';
-import { IsTheSameAs } from '../decorator/auth.decorator';
-
-export class SignInDTO {
-  @IsEmail({}, { message: 'Invalid email' })
-  @IsNotEmpty({ message: 'email is required' })
-  email: string;
-
-  @MinLength(6, { message: 'password must have at least 6 characters' })
-  @IsNotEmpty({ message: 'password is required' })
-  password: string;
-}
+import { IsTheSameAs } from '../decorator/dto.decorator';
 
 export class SignUpDTO {
   @IsNotEmpty({ message: 'first_name is required' })
@@ -48,9 +40,20 @@ export class SignUpDTO {
   confirm_password: string;
 }
 
-export class CodeAuthDTO {
+export class SignInDTO {
+  @IsEmail({}, { message: 'Invalid email' })
+  @IsNotEmpty({ message: 'email is required' })
+  email: string;
+
+  @MinLength(6, { message: 'password must have at least 6 characters' })
+  @IsNotEmpty({ message: 'password is required' })
+  password: string;
+}
+
+export class VerifyEmailDTO {
   @IsNotEmpty({ message: 'id is required' })
-  id: number;
+  @IsUUID()
+  id: string;
 
   @IsNotEmpty({ message: 'code is required' })
   code: string;

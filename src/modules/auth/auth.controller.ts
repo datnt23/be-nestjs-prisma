@@ -11,30 +11,29 @@ import {
 import { AuthService } from './auth.service';
 import {
   ForgotPasswordDTO,
-  CodeAuthDTO,
   EmailDTO,
   SignInDTO,
   SignUpDTO,
-} from '../../dto/auth.dto';
+  VerifyEmailDTO,
+} from '../../common/dto/auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
-import { Public } from '../../decorator/public.decorator';
-import { MailService } from '../../mail/mail.service';
-import { ResponseMessage } from '../../decorator/response_message.decorator';
+import { Public } from '../../common/decorator/public.decorator';
+import { ResponseMessage } from '../../common/decorator/response_message.decorator';
+import { Roles } from '../../common/decorator/roles.decorator';
+import { Permissions } from '../../common/decorator/permissions.decorator';
+import { Permission } from '../../common/enum/permission.enum';
+import { Role } from '../../common/enum/role.enum';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly mailService: MailService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   // @UseGuards(AuthGuard("local"))
   @Public()
   @Post('login')
   @UseGuards(LocalAuthGuard)
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('Login successfully')
   async handleLogin(@Request() req) {
     return this.authService.signIn(req.user);
@@ -54,15 +53,13 @@ export class AuthController {
 
   @Public()
   @Post('verify-email')
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('Email code verified successfully')
-  async verifyEmail(@Body() codeAuthDTO: CodeAuthDTO) {
-    return this.authService.verifyEmail(codeAuthDTO);
+  async verifyEmail(@Body() verifyEmailDTO: VerifyEmailDTO) {
+    return this.authService.verifyEmail(verifyEmailDTO);
   }
 
   @Public()
   @Post('resend-verification')
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('Verification code sent to new email')
   async resendVerification(@Body() body: EmailDTO) {
     return this.authService.resendVerificationEmail(body.email);
@@ -70,7 +67,6 @@ export class AuthController {
 
   @Public()
   @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('Password reset code sent to your email')
   async forgotPassword(@Body() body: EmailDTO) {
     return this.authService.forgotPassword(body.email);
@@ -78,15 +74,16 @@ export class AuthController {
 
   @Public()
   @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('A reset password code has been sent to the email')
   async resetPassword(@Body() body: ForgotPasswordDTO) {
     return this.authService.resetPassword(body);
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Get('profile')
+  @Roles(Role.USER, Role.ADMIN)
+  @Permissions(Permission.VIEW_PROFILE)
+  @ResponseMessage('Get profile successfully')
   getProfile(@Request() req) {
-    return req.user;
+    return this.authService.getProfile(req.user);
   }
 }

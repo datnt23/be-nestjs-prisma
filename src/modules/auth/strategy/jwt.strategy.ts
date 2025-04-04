@@ -9,6 +9,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+export type JwtPayload = {
+  id: string;
+  email: string;
+};
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
@@ -19,11 +24,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     } as StrategyOptionsWithRequest);
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     return {
       id: payload.id,
       email: payload.email,
-      full_name: payload.full_name,
     };
   }
 }

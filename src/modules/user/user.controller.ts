@@ -7,19 +7,19 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ResponseMessage } from '../../decorator/response_message.decorator';
+import { ResponseMessage } from '../../common/decorator/response_message.decorator';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('Get user list successfully')
   async findAll(
     @Query() query: string,
@@ -37,37 +37,32 @@ export class UserController {
   }
 
   @Get(':id')
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('Get user successfully')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id', ParseUUIDPipe) id) {
     return this.userService.getById(id);
   }
 
   @Patch(':id')
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('User updated successfully')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() payload: any) {
+  async update(@Param('id', ParseUUIDPipe) id, @Body() payload: any) {
     return this.userService.update(id, payload);
   }
 
-  @Delete(':id/remove')
-  @HttpCode(HttpStatus.OK)
+  @Delete(':id/soft')
   @ResponseMessage('User deleted successfully')
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.remove(id);
+  async softDelete(@Param('id', ParseUUIDPipe) id) {
+    return this.userService.softDelete(id);
   }
 
-  @HttpCode(HttpStatus.OK)
   @Post(':id/restore')
   @ResponseMessage('User restored successfully')
-  async restore(@Param('id', ParseIntPipe) id: number) {
+  async restore(@Param('id', ParseUUIDPipe) id) {
     return this.userService.restore(id);
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.OK)
   @ResponseMessage('User deleted from the database successfully')
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.delete(id);
+  async hardDelete(@Param('id', ParseUUIDPipe) id) {
+    return this.userService.hardDelete(id);
   }
 }

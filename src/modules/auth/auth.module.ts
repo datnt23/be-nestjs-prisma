@@ -6,9 +6,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
-import { LocalStrategy } from './strategies/local.strategy';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalStrategy } from './strategy/local.strategy';
 import { MailModule } from '../../mail/mail.module';
+import { JwtStrategy } from './strategy/jwt.strategy';
+import { LocalAuthGuard } from './guard/local-auth.guard';
 
 @Module({
   imports: [
@@ -28,6 +29,6 @@ import { MailModule } from '../../mail/mail.module';
     MailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, LocalAuthGuard],
 })
 export class AuthModule {}

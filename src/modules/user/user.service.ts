@@ -4,31 +4,51 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, users } from '@prisma/client';
-import { CreateUserProps, FindUserProps } from './types';
-import { PaginationDTO } from '../../dto/pagination.dto';
+import { PaginationDTO } from '../../common/dto/pagination.dto';
 import { getSelectData } from '../../util';
 import aqp from 'api-query-params';
-import { CodeAuthDTO } from 'src/dto/auth.dto';
+import { Prisma, User } from '@prisma/client';
+import { Role } from 'src/common/enum/role.enum';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async findByEmail(email: string): Promise<any> {
-    return await this.prisma.users.findUnique({ where: { email: email } });
+  async findByEmail(email: string): Promise<User | null> {
+    return await this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findOne(payload: Prisma.usersWhereInput): Promise<users | null> {
-    return await this.prisma.users.findFirst({ where: payload });
+  async findById(id: string): Promise<any> {
+    return await this.prisma.user.findUnique({
+      where: { id },
+      include: { roles: { include: { role: true } } },
+      omit: getSelectData(['password', 'is_active', 'code_id', 'code_expired']),
+    });
   }
 
-  async findByIdAndCode(id: number, code: string): Promise<users | null> {
-    return await this.prisma.users.findUnique({ where: { id, code_id: code } });
+  async findOne(id: string): Promise<User | null> {
+    return await this.prisma.user.findUnique({
+      where: { id },
+      omit: getSelectData([
+        'password',
+        'is_active',
+        'code_id',
+        'code_expired',
+        'deleted_at',
+      ]),
+    });
   }
 
-  async findByEmailAndCode(email: string, code: string): Promise<users | null> {
-    return await this.prisma.users.findUnique({
+  async checkUserIdExists(id: string) {
+    const user = await this.findById(id);
+
+    if (!user) throw new NotFoundException(`User not found`);
+
+    return;
+  }
+
+  async findByEmailAndCode(email: string, code: string): Promise<User | null> {
+    return await this.prisma.user.findUnique({
       where: { email, code_id: code },
     });
   }
@@ -77,12 +97,12 @@ export class UserService {
     const skip = (page - 1) * limit;
     const sortBy = { [sort]: order };
 
-    const totalItems = await this.prisma.users.count({
+    const totalItems = await this.prisma.user.count({
       where: whereCondition,
     });
     const totalPages = Math.ceil(totalItems / limit);
 
-    const users = await this.prisma.users.findMany({
+    const users = await this.prisma.user.findMany({
       where: whereCondition,
       take: limit,
       skip,
@@ -98,46 +118,9 @@ export class UserService {
     };
   }
 
-  async checkUserExistsById(id: number) {
-    const user = await this.findOne({ id });
-
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-
-    return user;
-  }
-
-  async checkEmailExists(email: string) {
-    const user = await this.findByEmail(email);
-
-    if (!user) throw new NotFoundException('Email not found');
-
-    return user;
-  }
-
-  async create({
-    email,
-    password,
-    roles,
-    first_name,
-    last_name,
-    full_name,
-    display_name,
-    code_id,
-    code_expired,
-  }: CreateUserProps) {
-    return await this.prisma.users.create({
-      data: {
-        email,
-        password,
-        roles,
-        first_name,
-        last_name,
-        full_name,
-        display_name,
-        is_active: false,
-        code_id,
-        code_expired,
-      },
+  async create(payload: Prisma.UserCreateInput) {
+    return await this.prisma.user.create({
+      data: { ...payload },
     });
   }
 
@@ -149,25 +132,48 @@ export class UserService {
     });
   }
 
-  async getById(id: number) {
-    return await this.checkUserExistsById(id);
+  async getById(id: string) {
+    const user = await this.findById(id);
+
+    if (!user) throw new NotFoundException(`User not found`);
+
+    return user;
   }
 
-  async update(id: number, payload: any) {
-    await this.checkUserExistsById(id);
+  async update(id: string, payload: any) {
+    await this.checkUserIdExists(id);
 
-    return await this.prisma.users.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: payload,
+      include: {
+        roles: {
+          include: {
+            role: { select: { id: true, name: true } },
+          },
+        },
+      },
+      omit: getSelectData([
+        'password',
+        'is_active',
+        'code_id',
+        'code_expired',
+        'deleted_at',
+      ]),
     });
+
+    return {
+      ...updated,
+      roles: updated.roles.map((ur) => ur.role),
+    };
   }
 
-  async remove(id: number) {
-    const user = await this.checkUserExistsById(id);
+  async softDelete(id: string) {
+    const user = await this.getById(id);
 
     if (user.deleted_at) throw new BadRequestException('User is deleted');
 
-    await this.prisma.users.update({
+    await this.prisma.user.update({
       where: { id },
       data: {
         deleted_at: new Date(),
@@ -177,12 +183,12 @@ export class UserService {
     return;
   }
 
-  async restore(id: number) {
-    const user = await this.checkUserExistsById(id);
+  async restore(id: string) {
+    const user = await this.getById(id);
 
     if (!user.deleted_at) throw new BadRequestException('User is not deleted');
 
-    return await this.prisma.users.update({
+    return await this.prisma.user.update({
       where: { id },
       data: {
         deleted_at: null,
@@ -197,21 +203,21 @@ export class UserService {
     });
   }
 
-  async delete(id: number) {
-    await this.checkUserExistsById(id);
-    await this.prisma.users.delete({ where: { id } });
+  async hardDelete(id: string) {
+    await this.checkUserIdExists(id);
+    await this.prisma.user.delete({ where: { id } });
     return;
   }
 
-  async handleActive(id: number): Promise<users | null> {
-    return await this.prisma.users.update({
+  async handleActive(id: string): Promise<User | null> {
+    return await this.prisma.user.update({
       where: { id },
       data: { is_active: true },
     });
   }
 
-  async updateOne(id: number, payload: any): Promise<users | null> {
-    return await this.prisma.users.update({
+  async updateOne(id: string, payload: any): Promise<User | null> {
+    return await this.prisma.user.update({
       where: { id },
       data: payload,
     });
