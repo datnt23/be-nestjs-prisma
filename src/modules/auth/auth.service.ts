@@ -18,7 +18,6 @@ import dayjs from 'dayjs';
 import { JwtPayload } from './strategy/jwt.strategy';
 import { Role } from '../../common/enum/role.enum';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -30,7 +29,7 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  async checkCodeIsExpired(user: User): Promise<any> {
+  async checkCodeIsExpired(user: any): Promise<any> {
     const isExpired = dayjs().isBefore(user.code_expired);
     if (!isExpired) throw new BadRequestException('Code has expired');
 

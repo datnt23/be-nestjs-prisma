@@ -35,7 +35,7 @@ export class AuthController {
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @ResponseMessage('Login successfully')
-  async handleLogin(@Request() req) {
+  async handleLogin(@Body() signInDTO: SignInDTO, @Request() req) {
     return this.authService.signIn(req.user);
   }
   // @Post('login')

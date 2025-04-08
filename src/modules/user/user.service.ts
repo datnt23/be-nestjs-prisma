@@ -7,14 +7,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDTO } from '../../common/dto/pagination.dto';
 import { getSelectData } from '../../util';
 import aqp from 'api-query-params';
-import { Prisma, User } from '@prisma/client';
-import { Role } from 'src/common/enum/role.enum';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<any> {
     return await this.prisma.user.findUnique({ where: { email } });
   }
 
@@ -26,7 +24,7 @@ export class UserService {
     });
   }
 
-  async findOne(id: string): Promise<User | null> {
+  async findOne(id: string): Promise<any> {
     return await this.prisma.user.findUnique({
       where: { id },
       omit: getSelectData([
@@ -47,7 +45,7 @@ export class UserService {
     return;
   }
 
-  async findByEmailAndCode(email: string, code: string): Promise<User | null> {
+  async findByEmailAndCode(email: string, code: string): Promise<any> {
     return await this.prisma.user.findUnique({
       where: { email, code_id: code },
     });
@@ -118,7 +116,7 @@ export class UserService {
     };
   }
 
-  async create(payload: Prisma.UserCreateInput) {
+  async create(payload: any) {
     return await this.prisma.user.create({
       data: { ...payload },
     });
@@ -209,14 +207,14 @@ export class UserService {
     return;
   }
 
-  async handleActive(id: string): Promise<User | null> {
+  async handleActive(id: string): Promise<any> {
     return await this.prisma.user.update({
       where: { id },
       data: { is_active: true },
     });
   }
 
-  async updateOne(id: string, payload: any): Promise<User | null> {
+  async updateOne(id: string, payload: any): Promise<any> {
     return await this.prisma.user.update({
       where: { id },
       data: payload,

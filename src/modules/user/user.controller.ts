@@ -25,8 +25,8 @@ export class UserController {
     @Query() query: string,
     @Query('page', ParseIntPipe) page: number,
     @Query('limit', ParseIntPipe) limit: number,
-    @Query('sort') sort: string,
-    @Query('order') order: string,
+    @Query('sort') sort?: string,
+    @Query('order') order?: string,
   ) {
     return await this.userService.getAll(query, {
       page,
@@ -38,13 +38,13 @@ export class UserController {
 
   @Get(':id')
   @ResponseMessage('Get user successfully')
-  async findOne(@Param('id', ParseUUIDPipe) id) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.userService.getById(id);
   }
 
   @Patch(':id')
   @ResponseMessage('User updated successfully')
-  async update(@Param('id', ParseUUIDPipe) id, @Body() payload: any) {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: any) {
     return this.userService.update(id, payload);
   }
 

@@ -14,7 +14,10 @@ import { PermissionModule } from './modules/permission/permission.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     AuthModule,
     PrismaModule,
     UserModule,
